@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadFlow Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">DEMO FREELANCE PROJECT</span>
+        <h1>Thu lead khách hàng trong 30 giây</h1>
+        <p class="sub">
+          Một landing page mẫu để luyện quy trình: nhận yêu cầu → làm sản phẩm →
+          test → deploy → bàn giao khách.
+        </p>
+        <div class="badges">
+          <span>Responsive</span>
+          <span>Validation</span>
+          <span>Local Storage</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Đăng ký tư vấn</h2>
+        <form id="leadForm" novalidate>
+          <label>
+            Họ và tên
+            <input id="name" name="name" type="text" placeholder="Nguyễn Văn A" />
+            <small class="error" id="nameError"></small>
+          </label>
+
+          <label>
+            Số điện thoại
+            <input id="phone" name="phone" type="tel" placeholder="09xxxxxxxx" />
+            <small class="error" id="phoneError"></small>
+          </label>
+
+          <label>
+            Nhu cầu
+            <select id="need" name="need">
+              <option value="">Chọn nhu cầu</option>
+              <option>Làm website</option>
+              <option>Sửa website</option>
+              <option>Chatbot AI</option>
+              <option>Automation</option>
+            </select>
+            <small class="error" id="needError"></small>
+          </label>
+
+          <button type="submit">Gửi thông tin</button>
+          <p class="success" id="successMessage" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">ADMIN DEMO</span>
+          <h2>Danh sách lead đã gửi</h2>
+        </div>
+        <button id="clearLeads" class="secondary">Xóa dữ liệu demo</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Họ tên</th>
+              <th>SĐT</th>
+              <th>Nhu cầu</th>
+            </tr>
+          </thead>
+          <tbody id="leadTableBody">
+            <tr class="empty-row">
+              <td colspan="4">Chưa có lead nào.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        Bản demo này lưu dữ liệu ngay trong trình duyệt bằng localStorage, chưa gửi dữ liệu lên server thật.
+      </p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
