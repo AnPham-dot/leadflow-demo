@@ -5,6 +5,9 @@ const successMessage = document.getElementById("successMessage");
 
 const STORAGE_KEY = "leadflow-demo-leads";
 
+const GOOGLE_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzvyX3lagwVeEBLgBRCyEt3KD0rOwo7b4yrGVX_zxR4agT59QZvmdtEK3_lbn7RdaJz6g/exec";
+
 function getLeads() {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
@@ -74,6 +77,7 @@ function validate(name, phone, need) {
   }
 
   const normalizedPhone = phone.replace(/\s+/g, "");
+
   if (!/^(0|\+84)\d{9,10}$/.test(normalizedPhone)) {
     setError("phoneError", "Số điện thoại chưa đúng định dạng.");
     valid = false;
@@ -87,31 +91,73 @@ function validate(name, phone, need) {
   return valid;
 }
 
-form.addEventListener("submit", (event) => {
+async function sendToGoogleSheet(name, phone, need) {
+  const body = new URLSearchParams();
+  body.append("name", name);
+  body.append("phone", phone);
+  body.append("need", need);
+
+  const response = await fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    body,
+  });
+
+  if (!response.ok) {
+    throw new Error("Không gửi được dữ liệu.");
+  }
+
+  return response;
+}
+
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearErrors();
 
   const name = document.getElementById("name").value;
   const phone = document.getElementById("phone").value;
   const need = document.getElementById("need").value;
+  const submitButton = form.querySelector('button[type="submit"]');
 
   if (!validate(name, phone, need)) {
     return;
   }
 
-  const leads = getLeads();
-  leads.push({
-    name: name.trim(),
-    phone: phone.trim(),
-    need,
-    createdAt: new Date().toLocaleString("vi-VN"),
-  });
+  try {
+    submitButton.disabled = true;
+    submitButton.textContent = "Đang gửi...";
 
-  saveLeads(leads);
-  renderLeads();
-  form.reset();
+    await sendToGoogleSheet(
+      name.trim(),
+      phone.trim(),
+      need
+    );
 
-  successMessage.textContent = "Đã lưu lead thành công.";
+    const leads = getLeads();
+
+    leads.push({
+      name: name.trim(),
+      phone: phone.trim(),
+      need,
+      createdAt: new Date().toLocaleString("vi-VN"),
+    });
+
+    saveLeads(leads);
+    renderLeads();
+
+    form.reset();
+
+    successMessage.textContent =
+      "Đã gửi thông tin thành công.";
+
+  } catch (error) {
+    successMessage.textContent =
+      "Có lỗi khi gửi dữ liệu. Vui lòng thử lại.";
+
+    console.error(error);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Nhận tư vấn miễn phí";
+  }
 });
 
 clearButton.addEventListener("click", () => {
