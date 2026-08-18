@@ -1,172 +1,193 @@
-const form = document.getElementById("leadForm");
-const tableBody = document.getElementById("leadTableBody");
-const clearButton = document.getElementById("clearLeads");
-const successMessage = document.getElementById("successMessage");
+const form =
+  document.getElementById("leadForm");
 
-const STORAGE_KEY = "leadflow-demo-leads";
+const statusMessage =
+  document.getElementById("statusMessage");
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzvyX3lagwVeEBLgBRCyEt3KD0rOwo7b4yrGVX_zxR4agT59QZvmdtEK3_lbn7RdaJz6g/exec";
 
-function getLeads() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLeads(leads) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderLeads() {
-  const leads = getLeads();
-
-  if (leads.length === 0) {
-    tableBody.innerHTML = `
-      <tr class="empty-row">
-        <td colspan="4">Chưa có lead nào.</td>
-      </tr>
-    `;
-    return;
-  }
-
-  tableBody.innerHTML = leads
-    .slice()
-    .reverse()
-    .map(
-      (lead) => `
-        <tr>
-          <td>${escapeHtml(lead.createdAt)}</td>
-          <td>${escapeHtml(lead.name)}</td>
-          <td>${escapeHtml(lead.phone)}</td>
-          <td>${escapeHtml(lead.need)}</td>
-        </tr>
-      `
-    )
-    .join("");
-}
-
 function setError(id, message) {
-  document.getElementById(id).textContent = message;
+  document.getElementById(id).textContent =
+    message;
 }
 
-function clearErrors() {
+function clearFeedback() {
   setError("nameError", "");
   setError("phoneError", "");
   setError("needError", "");
-  successMessage.textContent = "";
+
+  statusMessage.textContent = "";
+  statusMessage.className = "status";
 }
 
-function validate(name, phone, need) {
+function validate(
+  name,
+  phone,
+  need
+) {
   let valid = true;
 
-  if (name.trim().length < 2) {
-    setError("nameError", "Vui lòng nhập họ tên hợp lệ.");
+  if (
+    name.trim().length < 2
+  ) {
+    setError(
+      "nameError",
+      "Vui lòng nhập họ tên hợp lệ."
+    );
+
     valid = false;
   }
 
-  const normalizedPhone = phone.replace(/\s+/g, "");
+  const normalizedPhone =
+    phone.replace(
+      /\s+/g,
+      ""
+    );
 
-  if (!/^(0|\+84)\d{9,10}$/.test(normalizedPhone)) {
-    setError("phoneError", "Số điện thoại chưa đúng định dạng.");
+  if (
+    !/^(0|\+84)\d{9,10}$/.test(
+      normalizedPhone
+    )
+  ) {
+    setError(
+      "phoneError",
+      "Số điện thoại chưa đúng định dạng."
+    );
+
     valid = false;
   }
 
   if (!need) {
-    setError("needError", "Vui lòng chọn nhu cầu.");
+    setError(
+      "needError",
+      "Vui lòng chọn nhu cầu."
+    );
+
     valid = false;
   }
 
   return valid;
 }
 
-async function sendToGoogleSheet(name, phone, need) {
-  const body = new URLSearchParams();
-  body.append("name", name);
-  body.append("phone", phone);
-  body.append("need", need);
+async function sendToGoogleSheet(
+  name,
+  phone,
+  need
+) {
+  const body =
+    new URLSearchParams();
 
-  const response = await fetch(GOOGLE_SCRIPT_URL, {
-    method: "POST",
-    body,
-  });
+  body.append(
+    "name",
+    name
+  );
 
-  if (!response.ok) {
-    throw new Error("Không gửi được dữ liệu.");
-  }
+  body.append(
+    "phone",
+    phone
+  );
 
-  return response;
-}
+  body.append(
+    "need",
+    need
+  );
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  clearErrors();
-
-  const name = document.getElementById("name").value;
-  const phone = document.getElementById("phone").value;
-  const need = document.getElementById("need").value;
-  const submitButton = form.querySelector('button[type="submit"]');
-
-  if (!validate(name, phone, need)) {
-    return;
-  }
-
-  try {
-    submitButton.disabled = true;
-    submitButton.textContent = "Đang gửi...";
-
-    await sendToGoogleSheet(
-      name.trim(),
-      phone.trim(),
-      need
+  const response =
+    await fetch(
+      GOOGLE_SCRIPT_URL,
+      {
+        method: "POST",
+        body
+      }
     );
 
-    const leads = getLeads();
-
-    leads.push({
-      name: name.trim(),
-      phone: phone.trim(),
-      need,
-      createdAt: new Date().toLocaleString("vi-VN"),
-    });
-
-    saveLeads(leads);
-    renderLeads();
-
-    form.reset();
-
-    successMessage.textContent =
-      "Đã gửi thông tin thành công.";
-
-  } catch (error) {
-    successMessage.textContent =
-      "Có lỗi khi gửi dữ liệu. Vui lòng thử lại.";
-
-    console.error(error);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Nhận tư vấn miễn phí";
+  if (
+    !response.ok
+  ) {
+    throw new Error(
+      "Request failed"
+    );
   }
-});
+}
 
-clearButton.addEventListener("click", () => {
-  const confirmed = confirm("Xóa toàn bộ dữ liệu demo?");
-  if (!confirmed) return;
+form.addEventListener(
+  "submit",
+  async (event) => {
 
-  localStorage.removeItem(STORAGE_KEY);
-  renderLeads();
-  successMessage.textContent = "";
-});
+    event.preventDefault();
 
-renderLeads();
+    clearFeedback();
+
+    const name =
+      document
+        .getElementById("name")
+        .value;
+
+    const phone =
+      document
+        .getElementById("phone")
+        .value;
+
+    const need =
+      document
+        .getElementById("need")
+        .value;
+
+    const submitButton =
+      form.querySelector(
+        'button[type="submit"]'
+      );
+
+    if (
+      !validate(
+        name,
+        phone,
+        need
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      submitButton.disabled =
+        true;
+
+      submitButton.textContent =
+        "Đang gửi...";
+
+      await sendToGoogleSheet(
+        name.trim(),
+        phone.trim(),
+        need
+      );
+
+      form.reset();
+
+      statusMessage.textContent =
+        "Đã gửi thông tin thành công. Chúng tôi sẽ liên hệ với bạn sớm.";
+
+      statusMessage.className =
+        "status success";
+
+    } catch (error) {
+
+      console.error(error);
+
+      statusMessage.textContent =
+        "Không thể gửi thông tin. Vui lòng thử lại.";
+
+      statusMessage.className =
+        "status error-state";
+
+    } finally {
+
+      submitButton.disabled =
+        false;
+
+      submitButton.textContent =
+        "Nhận tư vấn miễn phí";
+    }
+  }
+);
